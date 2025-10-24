@@ -1,12 +1,12 @@
 import streamlit as st
-import speech_recognition as sr
 import webbrowser as wb
 import datetime
 import requests
 import pyjokes
 from gtts import gTTS
-import time
-import os
+from io import BytesIO
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, ClientSettings
+import speech_recognition as sr
 
 # -------------------------
 # 🔑 API Key
@@ -19,8 +19,10 @@ API_KEY = "4e4927e1d6a9d4e8f9f7a3313badd7a1"
 def speak(text):
     st.write(f"🟢 **Sheru:** {text}")
     tts = gTTS(text)
-    tts.save("response.mp3")
-    st.audio("response.mp3", autoplay=True)
+    fp = BytesIO()
+    tts.write_to_fp(fp)
+    fp.seek(0)
+    st.audio(fp, format="audio/mp3", autoplay=True)
 
 # -------------------------
 # 🌤️ Weather Function
@@ -80,7 +82,6 @@ def handle_command(command):
 st.set_page_config(page_title="Sheru - Voice Assistant", page_icon="🎤", layout="centered")
 st.title("⚡️ Sheru - Your Smart Voice Assistant")
 
-# Background Style (optional aesthetic)
 st.markdown(
     """
     <style>
@@ -91,7 +92,7 @@ st.markdown(
 )
 
 # -------------------------
-# 🎧 Continuous Listening Logic
+# 🎧 Voice Input Using Browser
 # -------------------------
 if "listening" not in st.session_state:
     st.session_state.listening = False
@@ -104,6 +105,36 @@ with col2:
     if st.button("🛑 Stop Listening"):
         st.session_state.listening = False
         speak("Listening stopped.")
+
+if st.session_state.listening:
+    st.info("🎧 Sheru is listening... Speak now!")
+
+    # WebRTC voice recorder
+    webrtc_ctx = webrtc_streamer(
+        key="speech-recorder",
+        mode=WebRtcMode.RECVONLY,
+        client_settings=ClientSettings(
+            media_stream_constraints={"audio": True, "video": False},
+        ),
+    )
+
+    if webrtc_ctx.audio_receiver:
+        audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=5)
+        if audio_frames:
+            # Convert audio frames to AudioData for speech recognition
+            recognizer = sr.Recognizer()
+            with sr.AudioFile(audio_frames[0].to_ndarray()) as source:
+                audio = recognizer.record(source)
+                try:
+                    command = recognizer.recognize_google(audio)
+                    st.write(f"🗣️ You said: **{command}**")
+                    response = handle_command(command)
+                    speak(response)
+                except sr.UnknownValueError:
+                    st.warning("⚠️ Sorry, I didn’t catch that.")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
 
 # -------------------------
 # 🔄 Listening Loop
