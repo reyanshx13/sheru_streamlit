@@ -146,6 +146,6 @@ if st.session_state.listening:
             st.warning("⚠️ Sorry, I didn’t catch that.")
         except Exception as e:
             st.error(f"Error: {e}")
-: {e}")
+
 
 
