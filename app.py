@@ -12,6 +12,8 @@ import queue
 import numpy as np
 import speech_recognition as sr
 import av
+import threading
+import time
 
 # -------------------------
 # 🔑 API Key
@@ -87,14 +89,11 @@ def handle_command(command):
 st.set_page_config(page_title="Sheru - Voice Assistant", page_icon="🎤", layout="centered")
 st.title("⚡️ Sheru - Your Smart Voice Assistant")
 
-st.markdown(
-    """
-    <style>
-    body { background-color: #0E1117; color: white; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown("""
+<style>
+body { background-color: #0E1117; color: white; }
+</style>
+""", unsafe_allow_html=True)
 
 # -------------------------
 # 🎧 Voice Input Using Browser
@@ -111,6 +110,7 @@ with col2:
         st.session_state.listening = False
         speak("Listening stopped.")
 
+# Audio queue for accumulating frames
 audio_queue = queue.Queue()
 
 def audio_callback(frame: av.AudioFrame):
@@ -118,11 +118,45 @@ def audio_callback(frame: av.AudioFrame):
     audio_queue.put(audio)
     return frame
 
+def process_audio():
+    recognizer = sr.Recognizer()
+    accumulated_frames = []
+    while st.session_state.listening:
+        try:
+            # Accumulate frames
+            while not audio_queue.empty():
+                accumulated_frames.append(audio_queue.get())
+            
+            if len(accumulated_frames) == 0:
+                time.sleep(0.1)
+                continue
+
+            # Concatenate frames
+            audio_data_np = np.concatenate(accumulated_frames, axis=0)
+            accumulated_frames.clear()
+
+            # Convert float32 to int16 PCM
+            audio_int16 = np.int16(audio_data_np * 32767)
+            audio_bytes = audio_int16.tobytes()
+
+            # Create AudioData for recognition
+            audio_sr = sr.AudioData(audio_bytes, 48000, 2)
+            command = recognizer.recognize_google(audio_sr)
+            
+            st.write(f"🗣️ You said: **{command}**")
+            response = handle_command(command)
+            speak(response)
+
+        except sr.UnknownValueError:
+            st.warning("⚠️ Sorry, I didn’t catch that.")
+        except Exception as e:
+            st.error(f"Error: {e}")
+        time.sleep(0.5)
+
 if st.session_state.listening:
     st.info("🎧 Sheru is listening... Speak now!")
 
     # --- WebRTC with TURN server ---
-    # Replace with your own TURN credentials
     TURN_SERVER_URL = "turn:global.relay.metered.ca:443"
     USERNAME = "59c2f3076a3a5f9d663ed1b2"
     PASSWORD = "Su0qN+B0UihYDo3A"
@@ -135,24 +169,12 @@ if st.session_state.listening:
         async_processing=True,
         rtc_configuration={
             "iceServers": [
-                {"urls": ["stun:stun.l.google.com:19302"]},  # STUN server
-                {"urls": [TURN_SERVER_URL], "username": USERNAME, "credential": PASSWORD},  # TURN server
+                {"urls": ["stun:stun.l.google.com:19302"]},
+                {"urls": [TURN_SERVER_URL], "username": USERNAME, "credential": PASSWORD},
             ]
         }
     )
 
-    if not audio_queue.empty():
-        recognizer = sr.Recognizer()
-        try:
-            audio_data = audio_queue.get()
-            # Convert NumPy array to AudioData
-            audio_data = sr.AudioData(audio_data.tobytes(), 16000, 2)
-            command = recognizer.recognize_google(audio_data)
-            st.write(f"🗣️ You said: **{command}**")
-            response = handle_command(command)
-            speak(response)
-        except sr.UnknownValueError:
-            st.warning("⚠️ Sorry, I didn’t catch that.")
-        except Exception as e:
-            st.error(f"Error: {e}")
+    # Start background thread for processing audio
+    threading.Thread(target=process_audio, daemon=True).start()
 
