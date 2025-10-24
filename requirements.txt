@@ -4,3 +4,4 @@ gtts
 requests
 pyjokes
 sounddevice
+pyttsx3
