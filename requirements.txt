@@ -4,8 +4,4 @@ gtts
 requests
 pyjokes
 sounddevice
-pyttsx3
-BytesIO
-WebRtcMode
-ClientSettings
-streamlit_webrtc
+
