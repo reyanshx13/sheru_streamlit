@@ -136,30 +136,3 @@ if st.session_state.listening:
                     st.error(f"Error: {e}")
 
 
-# -------------------------
-# 🔄 Listening Loop
-# -------------------------
-if st.session_state.listening:
-    st.info("🎧 Sheru is listening... Speak now!")
-
-    recognizer = sr.Recognizer()
-    mic = sr.Microphone()
-
-    with mic as source:
-        recognizer.adjust_for_ambient_noise(source)
-        audio = recognizer.listen(source, timeout=5, phrase_time_limit=5)
-        try:
-            command = recognizer.recognize_google(audio)
-            st.write(f"🗣️ You said: **{command}**")
-
-            response = handle_command(command)
-            speak(response)
-
-        except sr.UnknownValueError:
-            st.warning("⚠️ Sorry, I didn’t catch that.")
-        except Exception as e:
-            st.error(f"Error: {e}")
-
-    time.sleep(1)
-    st.rerun()
-
