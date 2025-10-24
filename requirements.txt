@@ -1,7 +1,5 @@
-streamlit
-speechrecognition
-gtts
-requests
+streamlit-webrtc
+gTTS
+SpeechRecognition
 pyjokes
-sounddevice
-
+requests
