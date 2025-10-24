@@ -7,12 +7,12 @@ from gtts import gTTS
 from io import BytesIO
 
 # Streamlit WebRTC for browser voice
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, ClientSettings
-import av
-import numpy as np
+from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import queue
 import threading
+import numpy as np
 import speech_recognition as sr
+import av
 
 # -------------------------
 # 🔑 API Key
@@ -112,23 +112,21 @@ with col2:
         st.session_state.listening = False
         speak("Listening stopped.")
 
-# Audio queue for capturing audio from WebRTC
 audio_queue = queue.Queue()
 
-def callback(frame: av.AudioFrame):
+def audio_callback(frame: av.AudioFrame):
     audio = frame.to_ndarray()
     audio_queue.put(audio)
     return frame
 
 if st.session_state.listening:
     st.info("🎧 Sheru is listening... Speak now!")
+
     webrtc_ctx = webrtc_streamer(
         key="speech-recorder",
         mode=WebRtcMode.RECVONLY,
-        client_settings=ClientSettings(
-            media_stream_constraints={"audio": True, "video": False},
-        ),
-        audio_frame_callback=callback,
+        media_stream_constraints={"audio": True, "video": False},
+        audio_frame_callback=audio_callback,
         async_processing=True,
     )
 
@@ -146,6 +144,5 @@ if st.session_state.listening:
             st.warning("⚠️ Sorry, I didn’t catch that.")
         except Exception as e:
             st.error(f"Error: {e}")
-
 
 
