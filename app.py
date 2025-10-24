@@ -5,7 +5,13 @@ import requests
 import pyjokes
 from gtts import gTTS
 from io import BytesIO
+
+# Streamlit WebRTC for browser voice
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, ClientSettings
+import av
+import numpy as np
+import queue
+import threading
 import speech_recognition as sr
 
 # -------------------------
@@ -14,7 +20,7 @@ import speech_recognition as sr
 API_KEY = "4e4927e1d6a9d4e8f9f7a3313badd7a1"
 
 # -------------------------
-# 🧠 Speak Function (gTTS)
+# 🧠 Speak Function
 # -------------------------
 def speak(text):
     st.write(f"🟢 **Sheru:** {text}")
@@ -106,33 +112,40 @@ with col2:
         st.session_state.listening = False
         speak("Listening stopped.")
 
+# Audio queue for capturing audio from WebRTC
+audio_queue = queue.Queue()
+
+def callback(frame: av.AudioFrame):
+    audio = frame.to_ndarray()
+    audio_queue.put(audio)
+    return frame
+
 if st.session_state.listening:
     st.info("🎧 Sheru is listening... Speak now!")
-
-    # WebRTC voice recorder
     webrtc_ctx = webrtc_streamer(
         key="speech-recorder",
         mode=WebRtcMode.RECVONLY,
         client_settings=ClientSettings(
             media_stream_constraints={"audio": True, "video": False},
         ),
+        audio_frame_callback=callback,
+        async_processing=True,
     )
 
-    if webrtc_ctx.audio_receiver:
-        audio_frames = webrtc_ctx.audio_receiver.get_frames(timeout=5)
-        if audio_frames:
-            # Convert audio frames to AudioData for speech recognition
-            recognizer = sr.Recognizer()
-            with sr.AudioFile(audio_frames[0].to_ndarray()) as source:
-                audio = recognizer.record(source)
-                try:
-                    command = recognizer.recognize_google(audio)
-                    st.write(f"🗣️ You said: **{command}**")
-                    response = handle_command(command)
-                    speak(response)
-                except sr.UnknownValueError:
-                    st.warning("⚠️ Sorry, I didn’t catch that.")
-                except Exception as e:
-                    st.error(f"Error: {e}")
+    if not audio_queue.empty():
+        recognizer = sr.Recognizer()
+        try:
+            audio_data = audio_queue.get()
+            # Convert NumPy array to AudioData
+            audio_data = sr.AudioData(audio_data.tobytes(), 16000, 2)
+            command = recognizer.recognize_google(audio_data)
+            st.write(f"🗣️ You said: **{command}**")
+            response = handle_command(command)
+            speak(response)
+        except sr.UnknownValueError:
+            st.warning("⚠️ Sorry, I didn’t catch that.")
+        except Exception as e:
+            st.error(f"Error: {e}")
+: {e}")
 
 
