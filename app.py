@@ -123,12 +123,20 @@ if st.session_state.listening:
     st.info("🎧 Sheru is listening... Speak now!")
 
     webrtc_ctx = webrtc_streamer(
-        key="speech-recorder",
-        mode=WebRtcMode.RECVONLY,
-        media_stream_constraints={"audio": True, "video": False},
-        audio_frame_callback=audio_callback,
-        async_processing=True,
-    )
+    key="speech-recorder",
+    mode=WebRtcMode.RECVONLY,
+    media_stream_constraints={"audio": True, "video": False},
+    async_processing=True,
+    rtc_configuration={
+        "iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]},  # STUN server
+            # Optional TURN server if you have one
+            # {"urls": ["turn:TURN_SERVER_URL"], "username": "USER", "credential": "PASS"}
+        ]
+    }
+)
+
+    
 
     if not audio_queue.empty():
         recognizer = sr.Recognizer()
