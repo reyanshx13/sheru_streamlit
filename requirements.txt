@@ -1,8 +1,8 @@
-streamlit==1.29.0
-streamlit-webrtc==0.54.0
-gTTS==2.3.2
-SpeechRecognition==3.11.0
-pyjokes==0.6.0
-requests==2.31.0
-numpy==1.26.0
+streamlit
+streamlit-webrtc
+gTTS
+SpeechRecognition
+pyjokes
+requests
+
 
