@@ -123,9 +123,9 @@ if st.session_state.listening:
 
     # --- WebRTC with TURN server ---
     # Replace with your own TURN credentials
-    TURN_SERVER_URL = "relay1.expressturn.com:3480"
-    USERNAME = "000000002076699254"
-    PASSWORD = "z3qleQ+9w/KtfBj6seBxD5ZT/zY="
+    TURN_SERVER_URL = "turn:global.relay.metered.ca:80"
+    USERNAME = "59c2f3076a3a5f9d663ed1b2"
+    PASSWORD = "Su0qN+B0UihYDo3A"
 
     webrtc_ctx = webrtc_streamer(
         key="speech-recorder",
