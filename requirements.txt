@@ -7,3 +7,4 @@ sounddevice
 pyttsx3
 BytesIO
 WebRtcMode
+ClientSettings
