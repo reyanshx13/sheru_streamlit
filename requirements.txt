@@ -1,4 +1,4 @@
-streamlit
+
 streamlit-webrtc
 gTTS
 SpeechRecognition
