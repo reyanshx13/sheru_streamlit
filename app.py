@@ -121,7 +121,12 @@ def audio_callback(frame: av.AudioFrame):
 if st.session_state.listening:
     st.info("🎧 Sheru is listening... Speak now!")
 
-    # WebRTC with STUN server for better connectivity
+    # --- WebRTC with TURN server ---
+    # Replace with your own TURN credentials
+    TURN_SERVER_URL = "relay1.expressturn.com:3480"
+    USERNAME = "000000002076699085"
+    PASSWORD = "7D89z4jCq9ARzI8v6utKYD+xj+0="
+
     webrtc_ctx = webrtc_streamer(
         key="speech-recorder",
         mode=WebRtcMode.RECVONLY,
@@ -130,7 +135,8 @@ if st.session_state.listening:
         async_processing=True,
         rtc_configuration={
             "iceServers": [
-                {"urls": ["stun:stun.l.google.com:19302"]},  # public STUN server
+                {"urls": ["stun:stun.l.google.com:19302"]},  # STUN server
+                {"urls": [TURN_SERVER_URL], "username": USERNAME, "credential": PASSWORD},  # TURN server
             ]
         }
     )
@@ -149,5 +155,4 @@ if st.session_state.listening:
             st.warning("⚠️ Sorry, I didn’t catch that.")
         except Exception as e:
             st.error(f"Error: {e}")
-
 
