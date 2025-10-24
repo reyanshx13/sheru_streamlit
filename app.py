@@ -1,12 +1,9 @@
 import streamlit as st
-import speech_recognition as sr
 import webbrowser as wb
 import datetime
-import pyttsx3
 import requests
 import pyjokes
 from gtts import gTTS
-import time
 import os
 
 # -------------------------
@@ -15,13 +12,7 @@ import os
 API_KEY = "4e4927e1d6a9d4e8f9f7a3313badd7a1"
 
 # -------------------------
-# 🎙️ Voice Engine Setup
-# -------------------------
-engine = pyttsx3.init()
-engine.setProperty("rate", 170)
-
-# -------------------------
-# 🧠 Speak Function
+# 🧠 Speak Function (gTTS)
 # -------------------------
 def speak(text):
     st.write(f"🟢 **Sheru:** {text}")
@@ -76,7 +67,6 @@ def handle_command(command):
     elif "your name" in command:
         return "My name is Sheru, your virtual assistant!"
     elif "stop" in command or "quit" in command:
-        st.session_state.listening = False
         return "Stopping now. Have a good day!"
     else:
         return "Sorry, I didn’t understand that."
@@ -87,7 +77,7 @@ def handle_command(command):
 st.set_page_config(page_title="Sheru - Voice Assistant", page_icon="🎤", layout="centered")
 st.title("⚡️ Sheru - Your Smart Voice Assistant")
 
-# Background Style (optional aesthetic)
+# Background Style
 st.markdown(
     """
     <style>
@@ -98,43 +88,11 @@ st.markdown(
 )
 
 # -------------------------
-# 🎧 Continuous Listening Logic
+# 🎤 User Input
 # -------------------------
-if "listening" not in st.session_state:
-    st.session_state.listening = False
+command = st.text_input("Type your command here and press Enter:")
 
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("🎙️ Start Listening"):
-        st.session_state.listening = True
-with col2:
-    if st.button("🛑 Stop Listening"):
-        st.session_state.listening = False
-        speak("Listening stopped.")
+if command:
+    response = handle_command(command)
+    speak(response)
 
-# -------------------------
-# 🔄 Listening Loop
-# -------------------------
-if st.session_state.listening:
-    st.info("🎧 Sheru is listening... Speak now!")
-
-    recognizer = sr.Recognizer()
-    mic = sr.Microphone()
-
-    with mic as source:
-        recognizer.adjust_for_ambient_noise(source)
-        audio = recognizer.listen(source, timeout=5, phrase_time_limit=5)
-        try:
-            command = recognizer.recognize_google(audio)
-            st.write(f"🗣️ You said: **{command}**")
-
-            response = handle_command(command)
-            speak(response)
-
-        except sr.UnknownValueError:
-            st.warning("⚠️ Sorry, I didn’t catch that.")
-        except Exception as e:
-            st.error(f"Error: {e}")
-
-    time.sleep(1)
-    st.rerun()
