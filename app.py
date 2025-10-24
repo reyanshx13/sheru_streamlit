@@ -123,7 +123,7 @@ if st.session_state.listening:
 
     # --- WebRTC with TURN server ---
     # Replace with your own TURN credentials
-    TURN_SERVER_URL = "turn:global.relay.metered.ca:80"
+    TURN_SERVER_URL = "turn:global.relay.metered.ca:443"
     USERNAME = "59c2f3076a3a5f9d663ed1b2"
     PASSWORD = "Su0qN+B0UihYDo3A"
 
