@@ -6,10 +6,9 @@ import pyjokes
 from gtts import gTTS
 from io import BytesIO
 
-# Streamlit WebRTC for browser voice
+# WebRTC
 from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import queue
-import threading
 import numpy as np
 import speech_recognition as sr
 import av
@@ -122,21 +121,19 @@ def audio_callback(frame: av.AudioFrame):
 if st.session_state.listening:
     st.info("🎧 Sheru is listening... Speak now!")
 
+    # WebRTC with STUN server for better connectivity
     webrtc_ctx = webrtc_streamer(
-    key="speech-recorder",
-    mode=WebRtcMode.RECVONLY,
-    media_stream_constraints={"audio": True, "video": False},
-    async_processing=True,
-    rtc_configuration={
-        "iceServers": [
-            {"urls": ["stun:stun.l.google.com:19302"]},  # STUN server
-            # Optional TURN server if you have one
-            # {"urls": ["turn:TURN_SERVER_URL"], "username": "USER", "credential": "PASS"}
-        ]
-    }
-)
-
-    
+        key="speech-recorder",
+        mode=WebRtcMode.RECVONLY,
+        media_stream_constraints={"audio": True, "video": False},
+        audio_frame_callback=audio_callback,
+        async_processing=True,
+        rtc_configuration={
+            "iceServers": [
+                {"urls": ["stun:stun.l.google.com:19302"]},  # public STUN server
+            ]
+        }
+    )
 
     if not audio_queue.empty():
         recognizer = sr.Recognizer()
